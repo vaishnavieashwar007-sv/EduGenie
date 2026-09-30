@@ -1,0 +1,36 @@
+# =========================================================
+# EduGenie Environment Configuration
+# =========================================================
+
+# Your Google Gemini API key
+GEMINI_API_KEY=PASTE_YOUR_GEMINI_API_KEY_HERE
+
+
+# Gemini model
+GEMINI_MODEL=gemini-3.8-flash
+
+
+# Explanation model
+EXPLANATION_MODEL=gemini-3.8-flash
+
+
+# =========================================================
+# Optional Local LaMini-Flan-T5
+# =========================================================
+
+# false = use Gemini
+# true  = use local LaMini-Flan-T5
+
+USE_LOCAL_EXPLANATION=false
+
+
+LOCAL_EXPLANATION_MODEL=MBZUAI/LaMini-Flan-T5-783M
+
+
+# =========================================================
+# Generation configuration
+# =========================================================
+
+MAX_OUTPUT_TOKENS=2048
+
+TEMPERATURE=0.3

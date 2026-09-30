@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EduGenie - AI Learning Assistant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #222;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2563eb;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 15px;
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        #result {
+            line-height: 1.6;
+            min-height: 50px;
+        }
+
+        .loading {
+            color: #2563eb;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #dc2626;
+        }
+
+        .success {
+            color: #166534;
+        }
+
+        .result-text {
+            white-space: pre-wrap;
+            line-height: 1.7;
+        }
+
+        .quiz-question {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 18px;
+        }
+
+        .quiz-question h3 {
+            margin-top: 0;
+            color: #1e3a8a;
+        }
+
+        .quiz-option {
+            padding: 10px;
+            margin: 7px 0;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+        }
+
+        .correct-answer {
+            margin-top: 12px;
+            padding: 10px;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 7px;
+            font-weight: bold;
+        }
+
+        .status {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 15px auto;
+                padding: 12px;
+            }
+
+            .card {
+                padding: 18px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>EduGenie</h1>
+
+    <div class="subtitle">
+        Google Gemini Powered Learning Assistant
+    </div>
+
+    <div class="card">
+
+        <label for="task">
+            Choose Learning Task
+        </label>
+
+        <select id="task" onchange="updatePlaceholder()">
+            <option value="qa">Ask a Question</option>
+            <option value="explain">Explain a Concept</option>
+            <option value="quiz">Generate Quiz</option>
+            <option value="summarize">Summarize Text</option>
+            <option value="learn">Learning Path</option>
+        </select>
+
+        <label for="inputText">
+            Enter your content
+        </label>
+
+        <textarea
+            id="inputText"
+            placeholder="Type your question here..."
+        ></textarea>
+
+        <button id="askButton" onclick="submitTask()">
+            Ask EduGenie
+        </button>
+
+        <div id="status" class="status"></div>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Result</h2>
+
+        <div id="result">
+            Your AI-generated answer will appear here.
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /*
+     * ============================================================
+     * UPDATE PLACEHOLDER
+     * ============================================================
+     */
+
+    function updatePlaceholder() {
+
+        const task = document.getElementById("task").value;
+        const input = document.getElementById("inputText");
+
+        if (task === "qa") {
+
+            input.placeholder =
+                "Example: What is photosynthesis?";
+
+        } else if (task === "explain") {
+
+            input.placeholder =
+                "Example: Artificial Intelligence";
+
+        } else if (task === "quiz") {
+
+            input.placeholder =
+                "Example: Pythagoras theorem";
+
+        } else if (task === "summarize") {
+
+            input.placeholder =
+                "Paste the text you want to summarize...";
+
+        } else if (task === "learn") {
+
+            input.placeholder =
+                "Example: SQL";
+        }
+    }
+
+
+    /*
+     * ============================================================
+     * MAIN SUBMIT FUNCTION
+     * ============================================================
+     */
+
+    async function submitTask() {
+
+        const task =
+            document.getElementById("task").value;
+
+        const input =
+            document.getElementById("inputText").value.trim();
+
+        const result =
+            document.getElementById("result");
+
+        const button =
+            document.getElementById("askButton");
+
+        const status =
+            document.getElementById("status");
+
+
+        console.log("Task:", task);
+        console.log("Input:", input);
+
+
+        /*
+         * Validate input
+         */
+
+        if (!input) {
+
+            result.innerHTML =
+                '<span class="error">Please enter some content.</span>';
+
+            return;
+        }
+
+
+        /*
+         * Disable button while processing
+         */
+
+        button.disabled = true;
+
+        button.textContent = "Processing...";
+
+
+        result.innerHTML =
+            '<span class="loading">EduGenie is thinking...</span>';
+
+        status.textContent =
+            "Sending request to EduGenie server...";
+
+
+        let url;
+        let body;
+
+
+        /*
+         * ========================================================
+         * Q&A
+         * ========================================================
+         */
+
+        if (task === "qa") {
+
+            url = "/qa";
+
+            body = {
+                question: input
+            };
+
+        }
+
+
+        /*
+         * ========================================================
+         * EXPLAIN
+         * ========================================================
+         */
+
+        else if (task === "explain") {
+
+            url = "/explain";
+
+            body = {
+                text: input
+            };
+
+        }
+
+
+        /*
+         * ========================================================
+         * QUIZ
+         * ========================================================
+         */
+
+        else if (task === "quiz") {
+
+            url = "/quiz";
+
+            body = {
+                text: input,
+                count: 3
+            };
+
+        }
+
+
+        /*
+         * ========================================================
+         * SUMMARIZE
+         * ========================================================
+         */
+
+        else if (task === "summarize") {
+
+            url = "/summarize";
+
+            body = {
+                text: input
+            };
+
+        }
+
+
+        /*
+         * ========================================================
+         * LEARNING PATH
+         * ========================================================
+         */
+
+        else if (task === "learn") {
+
+            url = "/learn/recommendations";
+
+            body = {
+                topic: input,
+                level: "beginner",
+                weeks: 6
+            };
+
+        }
+
+
+        try {
+
+            console.log("Sending request:", url);
+            console.log("Request body:", body);
+
+
+            /*
+             * Send request to FastAPI
+             */
+
+            const response = await fetch(url, {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify(body)
+
+            });
+
+
+            console.log(
+                "HTTP status:",
+                response.status
+            );
+
+
+            /*
+             * Read JSON response
+             */
+
+            const data = await response.json();
+
+
+            console.log(
+                "Server response:",
+                data
+            );
+
+
+            /*
+             * HTTP error
+             */
+
+            if (!response.ok) {
+
+                let errorMessage =
+                    "Server error.";
+
+                if (data.detail) {
+
+                    errorMessage =
+                        data.detail;
+
+                } else if (data.error) {
+
+                    errorMessage =
+                        data.error;
+                }
+
+                result.innerHTML =
+                    '<span class="error">' +
+                    escapeHtml(errorMessage) +
+                    '</span>';
+
+                status.textContent =
+                    "Request failed.";
+
+                return;
+            }
+
+
+            /*
+             * Backend success = false
+             */
+
+            if (data.success === false) {
+
+                const errorMessage =
+                    data.error ||
+                    data.answer ||
+                    data.explanation ||
+                    data.summary ||
+                    data.recommendations ||
+                    "The server could not process the request.";
+
+                result.innerHTML =
+                    '<span class="error">' +
+                    escapeHtml(errorMessage) +
+                    '</span>';
+
+                status.textContent =
+                    "Request completed with an error.";
+
+                return;
+            }
+
+
+            /*
+             * ====================================================
+             * IMPORTANT RESPONSE HANDLING
+             * ====================================================
+             *
+             * Backend responses:
+             *
+             * /qa
+             *       data.answer
+             *
+             * /explain
+             *       data.explanation
+             *
+             * /quiz
+             *       data.quiz
+             *
+             * /summarize
+             *       data.summary
+             *
+             * /learn/recommendations
+             *       data.recommendations
+             */
+
+            if (task === "qa") {
+
+                displayNormalResult(
+                    data.answer,
+                    result
+                );
+
+            }
+
+
+            else if (task === "explain") {
+
+                displayNormalResult(
+                    data.explanation,
+                    result
+                );
+
+            }
+
+
+            else if (task === "quiz") {
+
+                displayQuiz(
+                    data.quiz,
+                    result
+                );
+
+            }
+
+
+            else if (task === "summarize") {
+
+                displayNormalResult(
+                    data.summary,
+                    result
+                );
+
+            }
+
+
+            else if (task === "learn") {
+
+                displayNormalResult(
+                    data.recommendations,
+                    result
+                );
+
+            }
+
+
+            else {
+
+                displayNormalResult(
+                    data.result,
+                    result
+                );
+            }
+
+
+            status.textContent =
+                "Response received successfully.";
+
+        }
+
+
+        catch (error) {
+
+            console.error(
+                "Request error:",
+                error
+            );
+
+
+            result.innerHTML =
+                '<span class="error">' +
+                "Could not connect to the server. " +
+                "Please make sure EduGenie is running." +
+                '</span>';
+
+            status.textContent =
+                "Connection failed.";
+
+        }
+
+
+        finally {
+
+            button.disabled = false;
+
+            button.textContent =
+                "Ask EduGenie";
+        }
+    }
+
+
+    /*
+     * ============================================================
+     * DISPLAY NORMAL RESULT
+     * ============================================================
+     */
+
+    function displayNormalResult(
+        data,
+        result
+    ) {
+
+        /*
+         * No response
+         */
+
+        if (
+            data === undefined ||
+            data === null ||
+            data === ""
+        ) {
+
+            result.innerHTML =
+                '<span class="error">' +
+                "No result received from server." +
+                '</span>';
+
+            return;
+        }
+
+
+        /*
+         * String response
+         */
+
+        if (
+            typeof data === "string"
+        ) {
+
+            result.innerHTML =
+                '<div class="result-text">' +
+                escapeHtml(data) +
+                '</div>';
+
+            return;
+        }
+
+
+        /*
+         * Object response
+         */
+
+        if (
+            typeof data === "object"
+        ) {
+
+            result.innerHTML =
+                '<div class="result-text">' +
+                escapeHtml(
+                    JSON.stringify(
+                        data,
+                        null,
+                        2
+                    )
+                ) +
+                '</div>';
+
+            return;
+        }
+
+
+        /*
+         * Other data types
+         */
+
+        result.textContent =
+            String(data);
+    }
+
+
+    /*
+     * ============================================================
+     * DISPLAY QUIZ
+     * ============================================================
+     */
+
+    function displayQuiz(
+        quizData,
+        result
+    ) {
+
+        result.innerHTML = "";
+
+
+        /*
+         * Check array
+         */
+
+        if (!Array.isArray(quizData)) {
+
+            result.innerHTML =
+                '<span class="error">' +
+                "Quiz data format is invalid." +
+                '</span>';
+
+            console.error(
+                "Invalid quiz data:",
+                quizData
+            );
+
+            return;
+        }
+
+
+        /*
+         * Empty quiz
+         */
+
+        if (quizData.length === 0) {
+
+            result.innerHTML =
+                '<span class="error">' +
+                "No quiz questions received." +
+                '</span>';
+
+            return;
+        }
+
+
+        /*
+         * Display each question
+         */
+
+        quizData.forEach(
+            function(question, index) {
+
+                const questionDiv =
+                    document.createElement(
+                        "div"
+                    );
+
+                questionDiv.className =
+                    "quiz-question";
+
+
+                /*
+                 * Question heading
+                 */
+
+                const title =
+                    document.createElement(
+                        "h3"
+                    );
+
+                title.textContent =
+                    "Question " +
+                    (index + 1);
+
+                questionDiv.appendChild(
+                    title
+                );
+
+
+                /*
+                 * Question text
+                 */
+
+                const questionText =
+                    document.createElement(
+                        "p"
+                    );
+
+                questionText.textContent =
+                    question.question ||
+                    "Question unavailable.";
+
+                questionText.style.fontWeight =
+                    "bold";
+
+                questionDiv.appendChild(
+                    questionText
+                );
+
+
+                /*
+                 * Options
+                 */
+
+                if (
+                    Array.isArray(
+                        question.options
+                    )
+                ) {
+
+                    question.options.forEach(
+                        function(
+                            option,
+                            optionIndex
+                        ) {
+
+                            const optionDiv =
+                                document.createElement(
+                                    "div"
+                                );
+
+                            optionDiv.className =
+                                "quiz-option";
+
+
+                            const letter =
+                                String.fromCharCode(
+                                    65 +
+                                    optionIndex
+                                );
+
+
+                            optionDiv.textContent =
+                                letter +
+                                ". " +
+                                option;
+
+
+                            questionDiv.appendChild(
+                                optionDiv
+                            );
+
+                        }
+                    );
+                }
+
+
+                /*
+                 * Correct answer
+                 */
+
+                if (
+                    question.correct_answer
+                ) {
+
+                    const answerDiv =
+                        document.createElement(
+                            "div"
+                        );
+
+                    answerDiv.className =
+                        "correct-answer";
+
+
+                    answerDiv.textContent =
+                        "Correct Answer: " +
+                        question.correct_answer;
+
+
+                    questionDiv.appendChild(
+                        answerDiv
+                    );
+                }
+
+
+                /*
+                 * Add question to result
+                 */
+
+                result.appendChild(
+                    questionDiv
+                );
+
+            }
+        );
+    }
+
+
+    /*
+     * ============================================================
+     * HTML ESCAPE
+     * ============================================================
+     */
+
+    function escapeHtml(value) {
+
+        const div =
+            document.createElement(
+                "div"
+            );
+
+        div.textContent =
+            String(value);
+
+        return div.innerHTML;
+    }
+
+
+    /*
+     * ============================================================
+     * INITIAL PAGE SETUP
+     * ============================================================
+     */
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function() {
+
+            updatePlaceholder();
+
+        }
+    );
+
+</script>
+
+</body>
+</html>
